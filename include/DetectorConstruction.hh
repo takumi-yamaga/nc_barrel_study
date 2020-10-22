@@ -45,7 +45,7 @@ class G4GenericMessenger;
 
 // static constant
 
-static const int kSpace = 0.1*mm;
+static const int kSpace = 0.1*um;
 
 /// Detector construction
 
@@ -66,7 +66,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     //static G4ThreadLocal MagneticField* fMagneticField;
     //static G4ThreadLocal G4FieldManager* fFieldMgr;
     
-    G4LogicalVolume* cdh_logical_;
+    G4LogicalVolume* fnc_logical_;
 
     std::vector<G4VisAttributes*> fVisAttributes;
     

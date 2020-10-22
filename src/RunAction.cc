@@ -48,7 +48,7 @@ RunAction::RunAction()
   // Default settings
   analysisManager->SetNtupleMerging(true);
   analysisManager->SetVerboseLevel(1);
-  analysisManager->SetFileName("exx_acceptance_study");
+  analysisManager->SetFileName("nc_barrel_study");
 
   // Creating 1D histograms
   analysisManager // H1-ID = 0

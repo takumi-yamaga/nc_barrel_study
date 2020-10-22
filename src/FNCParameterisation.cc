@@ -23,73 +23,54 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-/// \copied from hadronic/Hadr01/src/PhysicsListMessenger.cc
-/// \brief Implementation of the PhysicsListMessenger class
 //
-// 
+/// \file FNCParameterisation.cc
+/// \brief Implementation of the FNCParameterisation class
 
-#include "PhysicsListMessenger.hh"
+#include "FNCParameterisation.hh"
 
-#include "PhysicsList.hh"
-#include "G4UIcmdWithAString.hh"
-#include "G4UIcmdWithoutParameter.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4ThreeVector.hh"
+#include "G4Box.hh"
+#include "G4RotationMatrix.hh"
+#include "G4SystemOfUnits.hh"
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-PhysicsListMessenger::PhysicsListMessenger(PhysicsList* pPhys)
-:G4UImessenger(), fPhysicsList(pPhys)
-{   
-  fPListCmd = new G4UIcmdWithAString("/nc_barrel_study/Physics",this);
-  fPListCmd->SetGuidance("Add modular physics list.");
-  fPListCmd->SetParameterName("PList",false);
-  fPListCmd->AvailableForStates(G4State_PreInit);
-
-  fListCmd = new G4UIcmdWithoutParameter("/nc_barrel_study/ListPhysics",this);
-  fListCmd->SetGuidance("Available Physics Lists");
-  fListCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
-}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-PhysicsListMessenger::~PhysicsListMessenger()
+FNCParameterisation::FNCParameterisation(  
+    G4int number_of_segments,
+    G4double width
+    )
+: G4VPVParameterisation()
 {
-  delete fPListCmd;
-  delete fListCmd;
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-void PhysicsListMessenger::SetNewValue(G4UIcommand* command, G4String newValue)
-{
-  if( command == fPListCmd ) {
-    if(fPhysicsList) {
-      G4String name = newValue;
-      if(name == "PHYSLIST") {
-        char* path = getenv(name);
-        if (path) name = G4String(path);
-        else {
-          G4cout << "### PhysicsListMessenger WARNING: "
-                 << " environment variable PHYSLIST is not defined"
-                 << G4endl;
-          return; 
-        }
-      }
-      fPhysicsList->AddPhysicsList(name);
-    } else {
-      G4cout << "### PhysicsListMessenger WARNING: "
-             << " /nc_barrel_study/Physics UI command is not available "
-             << "for reference Physics List" << G4endl;
-    }
-
-  } else if( command == fListCmd ) {
-    if(fPhysicsList) {
-      fPhysicsList->List();
-    } else { 
-      G4cout << "### PhysicsListMessenger WARNING: "
-             << " /nc_barrel_study/ListPhysics UI command is not available "
-             << "for reference Physics List" << G4endl;
-    }
+  number_of_segments_ =  number_of_segments;
+  width_ = width;
+  if(number_of_segments_%2){ // odd
+  offset_ = -width_*((G4double)number_of_segments_-1.)/2.;
+  }
+  else{ // even
+  offset_ = -width_*((G4double)number_of_segments_/2.-0.5);
   }
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+FNCParameterisation::~FNCParameterisation()
+{ }
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void FNCParameterisation::ComputeTransformation
+(const G4int copy_number, G4VPhysicalVolume* physical) const
+{
+  // copy_number will start with zero.
+  G4double x_position = offset_ + width_ * (G4double)copy_number;
+  G4double y_position = 0.;
+  G4double z_position = 0.;
+  G4ThreeVector current_position(x_position,y_position,z_position);
+  physical->SetTranslation(current_position);
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+

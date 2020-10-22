@@ -133,7 +133,7 @@ void HodoscopeHit::Draw()
     attributes = *logical_attributes;
     attributes.SetColour(MyColour::ScintillatorHasHit());
     attributes.SetForceSolid(true); // drawing solid shape
-    G4Transform3D transform(rotation_.inverse(),position_);
+    G4Transform3D transform(rotation_.inverse(),-position_);
     vis_manager->Draw(*logical_,attributes,transform);
   }
 }

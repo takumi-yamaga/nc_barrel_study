@@ -43,7 +43,7 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
 : G4VUserPrimaryGeneratorAction(),     
   particlegun_(nullptr), messenger_(nullptr), 
   proton_(nullptr),
-  momentum_(2.*GeV),
+  momentum_(0.6*GeV),
   randomize_primary_(false)
 {
   G4int num_particle = 1;
@@ -53,7 +53,7 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
   proton_ = particleTable->FindParticle("proton");
   
   // default particle kinematics
-  particlegun_->SetParticlePosition(G4ThreeVector(0.,0.,-250.*mm));
+  particlegun_->SetParticlePosition(G4ThreeVector(0.,0.,-40.*cm));
   particlegun_->SetParticleDefinition(proton_);
   
   // define commands for this class
@@ -80,7 +80,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* event)
   auto ekin = std::sqrt(pp*pp+mass*mass)-mass;
   particlegun_->SetParticleEnergy(ekin);
 
-  auto direction = G4ThreeVector(1.,1.,0.);
+  auto direction = G4ThreeVector(0.,0.,1.);
   particlegun_->SetParticleMomentumDirection(direction);
 
   auto polarization = G4ThreeVector(0.,1.,0.);
@@ -93,10 +93,10 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* event)
 
 void PrimaryGeneratorAction::DefineCommands()
 {
-  // Define /exx_acceptance_study/generator command directory using generic messenger class
+  // Define /nc_barrel_study/generator command directory using generic messenger class
   messenger_ 
     = new G4GenericMessenger(this, 
-        "/exx_acceptance_study/generator/", 
+        "/nc_barrel_study/generator/", 
         "Primary generator control");
 
   // momentum command

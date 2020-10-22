@@ -26,7 +26,7 @@
 /// \brief Implementation of the DetectorConstruction class
 
 #include "DetectorConstruction.hh"
-#include "CDHParameterisation.hh"
+#include "FNCParameterisation.hh"
 #include "HodoscopeSD.hh"
 #include "Constants.hh"
 
@@ -66,7 +66,7 @@
 
 DetectorConstruction::DetectorConstruction()
   : G4VUserDetectorConstruction(), 
-  cdh_logical_(nullptr)
+  fnc_logical_(nullptr)
 {
 }
 
@@ -104,7 +104,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
   // experimental hall (world volume) -------------------------------
   auto world_solid 
-    = new G4Box("world_solid",10.*m,10.*m,10.*m);
+    = new G4Box("world_solid",1.5*m,1.5*m,1.5*m);
   auto world_logical
     = new G4LogicalVolume(world_solid,air,"world_logical");
   auto world_physical
@@ -112,49 +112,74 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
         false,0,kCheckOverlaps);
   // ----------------------------------------------------------------
 
-  // target (tube) --------------------------------------------------
-  auto target_radius = 35*mm;
-  auto target_length   = 150*mm;
-  auto target_position = G4ThreeVector(0.*mm,0.*mm,0.*mm);
-  auto target_solid
-    = new G4Tubs("target_solid",0.*mm,target_radius,target_length,0.*deg,360.*deg);
-  auto target_logical
-    = new G4LogicalVolume(target_solid,liquid_he3,"target_logical");
-  //new G4PVPlacement(0,target_position,target_logical,"target_physical",
-  //    world_logical,false,0,kCheckOverlaps);
-  // ----------------------------------------------------------------
-  
-  // cdh mother volume ----------------------------------------------
-  auto cdh_mother_radius = 3*m;
-  auto cdh_mother_length   = 3*m;
-  auto cdh_mother_position = G4ThreeVector(0.*mm,0.*mm,0.*mm);
-  auto cdh_mother_solid
-    = new G4Tubs("cdh_mother_solid",0.*mm,cdh_mother_radius,cdh_mother_length,0.*deg,360.*deg);
-  auto cdh_mother_logical
-    = new G4LogicalVolume(cdh_mother_solid,liquid_he3,"cdh_mother_logical");
-  new G4PVPlacement(0,cdh_mother_position,cdh_mother_logical,"cdh_mother_physical",
+
+
+  // ======================================================
+  // fiber nutron counter =================================
+  // ======================================================
+  // parameters for fnc segment ------------------------------
+  auto fnc_number_of_layers_in_stack = 2;
+  auto fnc_number_of_segments_in_layer = 101;
+  auto fnc_fiber_width = 3.*mm;
+  auto fnc_fiber_thickness = 3.*mm;
+  auto fnc_fiber_length = 50.*cm;
+  // ---------------------------------------------------------
+
+  // fnc stack volume ---------------------------------------
+  auto fnc_stack_width   = (G4double)fnc_number_of_segments_in_layer * fnc_fiber_width;
+  auto fnc_stack_thickness   = (fnc_fiber_thickness*fnc_number_of_layers_in_stack);
+  auto fnc_stack_length  = fnc_fiber_length;
+  auto fnc_stack_position = G4ThreeVector(0.*mm,0.*mm,0.*mm);
+  auto fnc_stack_solid
+    = new G4Box("fnc_stack_solid",fnc_stack_width/2.,fnc_stack_length/2.,fnc_stack_thickness/2.);
+  auto fnc_stack_logical
+    = new G4LogicalVolume(fnc_stack_solid,scintillator,"fnc_stack_logical");
+  new G4PVPlacement(0,fnc_stack_position,fnc_stack_logical,"fnc_stack_0",
       world_logical,false,0,kCheckOverlaps);
   // ----------------------------------------------------------------
 
-  // cdh ------------------------------------------------------------
-  auto cdh_number_of_segments = 36;
-  auto cdh_position  = G4ThreeVector(0.*mm,0.*mm,0.*mm);
-  auto cdh_radius    = 80.*cm;
-  auto cdh_thickness = 3.*cm;
-  auto cdh_length    = 100.*cm;
+  // fnc layer volume ---------------------------------------
+  auto fnc_layer_width   = fnc_stack_width - kSpace;
+  auto fnc_layer_thickness   = fnc_fiber_thickness - kSpace;
+  auto fnc_layer_length  = fnc_stack_length - kSpace;
+  auto fnc_layer_offset = 0.;
+  auto fnc_layer_solid
+    = new G4Box("fnc_layer_solid",fnc_layer_width/2.,fnc_layer_length/2.,fnc_layer_thickness/2.);
+  auto fnc_layer_logical
+    = new G4LogicalVolume(fnc_layer_solid,scintillator,"fnc_layer_logical");
 
-  //dummy solid volume for G4Box (modified by parameterised volume)
-  auto cdh_solid 
-    = new G4Box("cdh_solid",cdh_thickness/2.,1.*cm/2.,cdh_length/2.);
-  cdh_logical_
-    = new G4LogicalVolume(cdh_solid,scintillator,"cdh_logical");
-  G4VPVParameterisation* cdh_parametrization
-    = new CDHParameterisation(cdh_number_of_segments,cdh_position,
-        cdh_radius,cdh_thickness,cdh_length);
-  // kZAxis is dummy for CDH.
-  new G4PVParameterised("cdh_physical",cdh_logical_,
-      cdh_mother_logical,kZAxis,cdh_number_of_segments,cdh_parametrization,kCheckOverlaps);
+  if(fnc_number_of_layers_in_stack%2){ // odd
+    fnc_layer_offset = - (G4double)(fnc_number_of_layers_in_stack-1)/2. * fnc_fiber_thickness;
+  }
+  else{ // even
+    fnc_layer_offset = - ((G4double)fnc_number_of_layers_in_stack/2. - 0.5) * fnc_fiber_thickness;
+  }
+  // along Z axis 
+  for(auto i_layer = 0; i_layer<fnc_number_of_layers_in_stack; ++i_layer){
+    auto z_position = fnc_layer_offset + fnc_fiber_thickness * (G4double)i_layer;
+    G4cout << "z_position ::: " << z_position << G4endl;
+    auto fnc_layer_position = G4ThreeVector(0.*mm,0.*mm,z_position);
+    char fnc_layer_physical_name[50];
+    std::sprintf(fnc_layer_physical_name,"fnc_layer_%d",i_layer);
+    new G4PVPlacement(0,fnc_layer_position,fnc_layer_logical,fnc_layer_physical_name,
+        fnc_stack_logical,false,0,kCheckOverlaps);
+  }
   // ----------------------------------------------------------------
+
+  //// fnc segment ----------------------------------------------------
+  auto fnc_segment_width   = fnc_fiber_width - kSpace;
+  auto fnc_segment_thickness   = fnc_layer_thickness - kSpace;
+  auto fnc_segment_length  = fnc_layer_length - kSpace;
+  auto fnc_solid 
+    = new G4Box("fnc_solid",fnc_segment_width/2.,fnc_segment_length/2.,fnc_segment_thickness/2.);
+  fnc_logical_
+    = new G4LogicalVolume(fnc_solid,scintillator,"fnc_logical");
+  G4VPVParameterisation* fnc_parametrization
+    = new FNCParameterisation(fnc_number_of_segments_in_layer,fnc_segment_width);
+  new G4PVParameterised("fnc_physical",fnc_logical_,
+      fnc_layer_logical,kXAxis,fnc_number_of_segments_in_layer,fnc_parametrization,kCheckOverlaps);
+  // kXAxis is dummy.
+  //// ----------------------------------------------------------------
 
   // visualization attributes ------------------------------------------------
   auto visAttributes = new G4VisAttributes(G4Colour::White());
@@ -163,7 +188,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   fVisAttributes.push_back(visAttributes);
 
   visAttributes = new G4VisAttributes(MyColour::Scintillator());
-  cdh_logical_->SetVisAttributes(visAttributes);
+  fnc_logical_->SetVisAttributes(visAttributes);
   fVisAttributes.push_back(visAttributes);
 
   // return the world physical volume ----------------------------------------
@@ -178,9 +203,9 @@ void DetectorConstruction::ConstructSDandField()
   G4String sensitive_detector_name;
 
   // sensitive detectors -----------------------------------------------------
-  auto cdh = new HodoscopeSD(sensitive_detector_name="/cdh");
-  sdManager->AddNewDetector(cdh);
-  cdh_logical_->SetSensitiveDetector(cdh);
+  auto fnc = new HodoscopeSD(sensitive_detector_name="/fnc");
+  sdManager->AddNewDetector(fnc);
+  fnc_logical_->SetSensitiveDetector(fnc);
 
 }    
 

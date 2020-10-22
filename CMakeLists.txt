@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------
 # Setup the project
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
-project(exx_acceptance_study)
+project(nc_barrel_study)
 
 #----------------------------------------------------------------------------
 # Setup compile options
@@ -39,13 +39,13 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 #----------------------------------------------------------------------------
 # Add the executable, and link it to the Geant4 libraries
 #
-add_executable(execute-exx_acceptance_study exx_acceptance_study.cc ${sources} ${headers})
-target_link_libraries(execute-exx_acceptance_study ${Geant4_LIBRARIES})
+add_executable(execute-nc_barrel_study nc_barrel_study.cc ${sources} ${headers})
+target_link_libraries(execute-nc_barrel_study ${Geant4_LIBRARIES})
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory.
 #
-set(exx_acceptance_study_SCRIPTS
+set(nc_barrel_study_SCRIPTS
   icons.mac
   gui.mac
   init.mac 
@@ -56,7 +56,7 @@ set(exx_acceptance_study_SCRIPTS
   test.root
   )
 
-foreach(_script ${exx_acceptance_study_SCRIPTS})
+foreach(_script ${nc_barrel_study_SCRIPTS})
   configure_file(
     ${PROJECT_SOURCE_DIR}/${_script}
     ${PROJECT_BINARY_DIR}/${_script}
@@ -67,23 +67,23 @@ endforeach()
 #----------------------------------------------------------------------------
 # Copy all macros to the build directory.
 #
-set(exx_acceptance_study_MACRO
+set(nc_barrel_study_MACRO
   Analysis.C 
   DrawTools.h 
   )
 
-foreach(_script ${exx_acceptance_study_MACRO})
+foreach(_script ${nc_barrel_study_MACRO})
   configure_file(
     ${PROJECT_SOURCE_DIR}/macro/${_script}
     ${PROJECT_BINARY_DIR}/macro/${_script}
     COPYONLY
     )
 endforeach()
-set(exx_acceptance_study_FIG
+set(nc_barrel_study_FIG
   analysis.pdf 
   )
 
-foreach(_script ${exx_acceptance_study_FIG})
+foreach(_script ${nc_barrel_study_FIG})
   configure_file(
     ${PROJECT_SOURCE_DIR}/fig/${_script}
     ${PROJECT_BINARY_DIR}/fig/${_script}
@@ -95,10 +95,10 @@ endforeach()
 # Add program to the project targets
 # (this avoids the need of typing the program name after make)
 #
-add_custom_target(exx_acceptance_study DEPENDS execute-exx_acceptance_study)
+add_custom_target(nc_barrel_study DEPENDS execute-nc_barrel_study)
 
 #----------------------------------------------------------------------------
 # Install the executable to 'bin' directory under CMAKE_INSTALL_PREFIX
 #
-install(TARGETS execute-exx_acceptance_study DESTINATION bin)
+install(TARGETS execute-nc_barrel_study DESTINATION bin)
 
